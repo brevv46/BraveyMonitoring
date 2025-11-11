@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# monitorAkmal.py — Enhanced IDS + Auto Blocking + WA Alert (Clean & Anti-Spam)
+# monitorBravey.py — Enhanced IDS + Auto Blocking + WA Alert (Clean & Anti-Spam)
 
 import os
 import json
@@ -128,7 +128,7 @@ def analyze_with_gemini(summary: str, timeout_sec: float = 6.0) -> str | None:
         genai.configure(api_key=GEMINI_API_KEY)
         model = genai.GenerativeModel(GEMINI_MODEL)
         prompt = (
-            "Nama kamu BotAkmal. Analisis singkat & padat peristiwa berikut.\n"
+            "Nama kamu BotBravey. Analisis singkat & padat peristiwa berikut.\n"
             "Gunakan format:\n"
             "Tingkat Risiko: <Low|Medium|High>\n"
             "Alasan: <1 kalimat>\n\n"
@@ -274,11 +274,11 @@ def main():
 
 # ==================== STARTUP ====================
 if __name__ == "__main__":
-    logging.info("[BotAkmal] Starting on host %s", HOSTNAME)
+    logging.info("[BotBravey] Starting on host %s", HOSTNAME)
 
     def _startup():
         try:
-            msg = f"🟢 [BotAkmal] aktif di {HOSTNAME}.\nPemantauan log dimulai ✅"
+            msg = f"🟢 [BotBravey] aktif di {HOSTNAME}.\nPemantauan log dimulai ✅"
             send_fonnte_message("system", msg)
         except Exception as e:
             logging.warning("Startup WA gagal: %s", e)

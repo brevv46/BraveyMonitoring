@@ -51,7 +51,7 @@ python3 - << 'PY'
 import os, socket, datetime, requests
 HOSTNAME = socket.gethostname()
 ts = datetime.datetime.now().isoformat()
-msg = f"[BotAkmal] Jenkins build monitorAkmal.py dimulai di {HOSTNAME} @ {ts}."
+msg = f"[BotBravey] Jenkins build monitorBravey.py dimulai di {HOSTNAME} @ {ts}."
 
 # Tes integrasi Gemini
 gemini_ok = False
