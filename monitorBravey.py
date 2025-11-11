@@ -42,7 +42,7 @@ GEMINI_MODEL = "gemini-2.5-flash"
 
 # File untuk log anti-spam
 ALERT_LOG_FILE = "/tmp/alert_log.json"
-COOLDOWN_SECONDS = 600  # 10 menit antar alert per IP
+COOLDOWN_SECONDS = 60  # 1 menit antar alert per IP
 
 # ==================== LOGGING ====================
 logging.basicConfig(level=logging.INFO,
