@@ -162,23 +162,82 @@ def format_whatsapp_message(summary: str, labels: list | None = None, analysis: 
     return "\n".join(msg)
 
 # ==================== FIREWALL BLOCK ====================
+# --- temporary block 10 minutes ---
+BLOCK_DURATION = 600  # 10 menit
+
+_blocked_ips = set()
+_blocked_ips_lock = threading.Lock()
+
+def _remove_firewall_rule(ip: str):
+    try:
+        if shutil.which("ufw"):
+            subprocess.run(["ufw", "delete", "deny", "from", ip], check=False)
+            logging.warning("Unblocked %s via ufw (temporary)", ip); return True
+        if shutil.which("nft"):
+            subprocess.run(["nft", "delete", "rule", "inet", "filter", "input",
+                            "ip", "saddr", ip, "drop"], check=False)
+            logging.warning("Unblocked %s via nft (temporary)"); return True
+        if shutil.which("iptables"):
+            subprocess.run(["iptables", "-D", "INPUT", "-s", ip, "-j", "DROP"], check=False)
+            logging.warning("Unblocked %s via iptables (temporary)"); return True
+    except Exception as e:
+        logging.warning("Unblock failed for %s: %s", ip, e)
+    return False
+
+def _schedule_unblock(ip: str, delay: int = BLOCK_DURATION):
+    def _worker():
+        try:
+            logging.info("Will unblock %s after %s seconds", ip, delay)
+            time.sleep(delay)
+            _remove_firewall_rule(ip)
+        finally:
+            with _blocked_ips_lock:
+                _blocked_ips.discard(ip)
+            try:
+                msg = format_whatsapp_message(
+                    f"IP {ip} otomatis dibuka setelah {delay//60} menit.",
+                    labels=["Unblock"], analysis=None
+                )
+                send_fonnte_message("system", msg)
+            except Exception as e:
+                logging.warning("Failed to notify unblock for %s: %s", ip, e)
+    threading.Thread(target=_worker, daemon=True).start()
+
 def block_ip(ip: str) -> bool:
+    with _blocked_ips_lock:
+        if ip in _blocked_ips:
+            logging.info("IP %s already temporarily blocked", ip)
+            return True
+        _blocked_ips.add(ip)
     try:
         if shutil.which("ufw"):
             subprocess.run(["ufw", "deny", "from", ip], check=False)
-            logging.warning("Blocked %s via ufw", ip)
-            return True
-        if shutil.which("nft"):
-            subprocess.run(["nft", "add", "rule", "inet", "filter", "input", "ip", "saddr", ip, "drop"], check=False)
-            logging.warning("Blocked %s via nft", ip)
-            return True
-        if shutil.which("iptables"):
+            logging.warning("Temporarily blocked %s via ufw", ip)
+        elif shutil.which("nft"):
+            subprocess.run(["nft", "add", "rule", "inet", "filter", "input",
+                            "ip", "saddr", ip, "drop"], check=False)
+            logging.warning("Temporarily blocked %s via nft", ip)
+        elif shutil.which("iptables"):
             subprocess.run(["iptables", "-I", "INPUT", "1", "-s", ip, "-j", "DROP"], check=False)
-            logging.warning("Blocked %s via iptables", ip)
-            return True
+            logging.warning("Temporarily blocked %s via iptables", ip)
+        else:
+            logging.warning("No firewall tool found; in-memory block only for %s", ip)
+
+        msg = format_whatsapp_message(
+            f"IP {ip} sementara diblokir {BLOCK_DURATION//60} menit karena deteksi ancaman.",
+            labels=["Temporary Block"], analysis=None
+        )
+        send_fonnte_message(ip, msg)
+
+        _schedule_unblock(ip, delay=BLOCK_DURATION)
+        return True
     except Exception as e:
         logging.warning("Block failed: %s", e)
-    return False
+        with _blocked_ips_lock:
+            _blocked_ips.discard(ip)
+        return False
+
+
 
 # ==================== EVENT PARSING ====================
 def parse_event(line: str):
@@ -259,6 +318,13 @@ def main():
                     msg = format_whatsapp_message(summary, ["BruteForce"], gemini_insight(summary))
                     send_fonnte_message(ip, msg)
                     ip_last_alert[ip] = now
+
+            # === SSH LOGIN SUCCESS ===
+            elif evt["type"] == "login_success":
+                if not is_admin_ip(ip):
+                    summary = f"Login SSH berhasil untuk user {evt.get('user','?')} dari {ip}"
+                    msg = format_whatsapp_message(summary, ["Login Success"], "Pastikan ini aktivitas Anda.")
+                    send_fonnte_message(ip, msg)
 
             # === WEB ACCESS ===
             elif evt["type"] == "web_access":
