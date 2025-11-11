@@ -10,10 +10,10 @@ pipeline {
     }
 
     environment {
-        SCRIPT_FILE = "monitorAkmal.py"
-        FONNTE_TOKEN = "uqMuVhM4YKzujVg38BiB"
-        FONNTE_TARGETS = "6281933976553"
-        GEMINI_API_KEY = "AIzaSyBEs_tXMSn30of1PvGnwn5mwrvogzOk_fo"
+        SCRIPT_FILE = "monitorBravey.py"
+        FONNTE_TOKEN = "iUrpA4Y6qP7AdcNHewBs"
+        FONNTE_TARGETS = "6281247776262"
+        GEMINI_API_KEY = "AIzaSyBAVnV2udYQWWvPEOyZ2cuAE91WBHcIaKc"
         GEMINI_MODEL = "gemini-2.5-flash"
     }
 
